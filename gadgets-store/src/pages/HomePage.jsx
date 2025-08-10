@@ -1,12 +1,15 @@
-import { useEffect } from 'react'
+import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
-import products, { allCategories } from '../data/products'
 import ProductCard from '../components/products/ProductCard'
 import { setPageSEO } from '../utils/seo'
+import { fetchProducts } from '../api/products'
+import Loading from '../components/common/Loading'
 
 export default function HomePage() {
+  const [items, setItems] = useState(null)
   useEffect(() => setPageSEO({ title: 'Gadgets Store – Latest Tech & Accessories', description: 'Shop smartphones, headphones, smartwatches, and accessories at Gadgets Store.' }), [])
-  const featured = products.slice(0, 4)
+  useEffect(() => { fetchProducts().then(setItems).catch(() => setItems([])) }, [])
+  const featured = (items || []).slice(0, 4)
 
   return (
     <div>
@@ -26,25 +29,16 @@ export default function HomePage() {
         </div>
       </section>
 
-      <section className="container-responsive py-12">
-        <h2 className="text-2xl font-bold">Shop by Category</h2>
-        <div className="mt-6 grid grid-cols-2 md:grid-cols-4 gap-4">
-          {allCategories.map(cat => (
-            <Link key={cat} to={`/shop?category=${encodeURIComponent(cat)}`} className="card p-6 text-center hover:shadow-lg transition-shadow">
-              <div className="text-lg font-semibold">{cat}</div>
-            </Link>
-          ))}
-        </div>
-      </section>
-
       <section id="featured" className="container-responsive py-12">
         <div className="flex items-center justify-between">
           <h2 className="text-2xl font-bold">Best Sellers</h2>
           <Link to="/shop" className="text-primary hover:underline">View all</Link>
         </div>
-        <div className="mt-6 grid gap-6 grid-cols-1 sm:grid-cols-2 lg:grid-cols-4">
-          {featured.map(p => <ProductCard key={p.id} product={p} />)}
-        </div>
+        {items === null ? <Loading /> : (
+          <div className="mt-6 grid gap-6 grid-cols-1 sm:grid-cols-2 lg:grid-cols-4">
+            {featured.map(p => <ProductCard key={p.id} product={p} />)}
+          </div>
+        )}
       </section>
 
       <section className="container-responsive py-12">

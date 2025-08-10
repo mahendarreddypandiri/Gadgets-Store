@@ -1,12 +1,13 @@
 import { useEffect, useState } from 'react'
 import { setPageSEO } from '../utils/seo'
+import { sendContactMessage } from '../api/misc'
 
 export default function ContactPage() {
   const [values, setValues] = useState({ name: '', email: '', message: '' })
   const [status, setStatus] = useState('')
   useEffect(() => setPageSEO({ title: 'Contact Us – Gadgets Store', description: 'Get in touch with our support team.' }), [])
 
-  function handleSubmit(e) {
+  async function handleSubmit(e) {
     e.preventDefault()
     const { name, email, message } = values
     const emailOk = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)
@@ -14,8 +15,13 @@ export default function ContactPage() {
       setStatus('Please fill out all fields correctly.')
       return
     }
-    setStatus('Thanks for reaching out! We will reply soon.')
-    setValues({ name: '', email: '', message: '' })
+    try {
+      await sendContactMessage({ name, email, message })
+      setStatus('Thanks for reaching out! We will reply soon.')
+      setValues({ name: '', email: '', message: '' })
+    } catch (err) {
+      setStatus('Failed: ' + err.message)
+    }
   }
 
   return (

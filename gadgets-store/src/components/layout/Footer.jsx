@@ -1,19 +1,25 @@
 import { Link } from 'react-router-dom'
 import { FiFacebook, FiInstagram, FiTwitter } from 'react-icons/fi'
 import { useState } from 'react'
+import { subscribeNewsletter } from '../../api/misc'
 
 export default function Footer() {
   const [email, setEmail] = useState('')
   const [msg, setMsg] = useState('')
 
-  function subscribe(e) {
+  async function subscribe(e) {
     e.preventDefault()
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
       setMsg('Please enter a valid email')
       return
     }
-    setMsg('Thanks for subscribing!')
-    setEmail('')
+    try {
+      await subscribeNewsletter(email)
+      setMsg('Thanks for subscribing!')
+      setEmail('')
+    } catch (err) {
+      setMsg('Failed: ' + err.message)
+    }
   }
 
   return (

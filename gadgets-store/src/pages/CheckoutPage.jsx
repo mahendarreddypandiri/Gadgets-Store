@@ -3,6 +3,7 @@ import { Formik, Form, Field, ErrorMessage } from 'formik'
 import * as Yup from 'yup'
 import { useCart } from '../state/CartContext'
 import { setPageSEO } from '../utils/seo'
+import { createOrder } from '../api/orders'
 
 const schema = Yup.object({
   fullName: Yup.string().min(2).required('Required'),
@@ -34,12 +35,25 @@ export default function CheckoutPage() {
           <Formik
             initialValues={{ fullName: '', email: '', phone: '', address: '', city: '', zip: '', payment: 'card' }}
             validationSchema={schema}
-            onSubmit={(values, { resetForm, setStatus }) => {
-              setTimeout(() => {
+            onSubmit={async (values, { resetForm, setStatus }) => {
+              try {
+                const payload = {
+                  email: values.email,
+                  fullName: values.fullName,
+                  phone: values.phone,
+                  address: values.address,
+                  city: values.city,
+                  zip: values.zip,
+                  payment: values.payment,
+                  items: state.items.map(i => ({ productId: i.id, quantity: i.quantity })),
+                }
+                await createOrder(payload)
                 setStatus('Order placed! Confirmation sent to ' + values.email)
                 clearCart()
                 resetForm()
-              }, 600)
+              } catch (e) {
+                setStatus('Failed to place order: ' + e.message)
+              }
             }}
           >
             {({ isSubmitting, status }) => (

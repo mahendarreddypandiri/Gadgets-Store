@@ -1,9 +1,9 @@
 import { Link, NavLink, useNavigate } from 'react-router-dom'
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { FiShoppingCart, FiSun, FiMoon, FiChevronDown } from 'react-icons/fi'
 import { useCart } from '../../state/CartContext'
 import { useTheme } from '../../state/ThemeContext'
-import products from '../../data/products'
+import { fetchProducts } from '../../api/products'
 
 const categories = ['Smartphones', 'Headphones', 'Smartwatches', 'Accessories']
 
@@ -13,14 +13,17 @@ export default function Header() {
   const navigate = useNavigate()
   const [query, setQuery] = useState('')
   const [open, setOpen] = useState(false)
+  const [all, setAll] = useState([])
+
+  useEffect(() => {
+    fetchProducts().then(setAll).catch(() => setAll([]))
+  }, [])
 
   const suggestions = useMemo(() => {
     if (!query.trim()) return []
     const q = query.toLowerCase()
-    return products
-      .filter(p => p.title.toLowerCase().includes(q))
-      .slice(0, 6)
-  }, [query])
+    return all.filter(p => p.title.toLowerCase().includes(q)).slice(0, 6)
+  }, [query, all])
 
   return (
     <header className="sticky top-0 z-40 bg-white/90 dark:bg-gray-950/90 backdrop-blur border-b border-gray-200 dark:border-gray-800">
@@ -60,10 +63,10 @@ export default function Header() {
                 <div className="px-4 py-3 text-sm text-gray-500">No results</div>
               ) : (
                 suggestions.map(s => (
-                  <button key={s.id} className="w-full text-left px-4 py-2 hover:bg-gray-50 dark:hover:bg-gray-800" onClick={() => { setQuery(''); navigate(`/product/${s.id}`) }}>
+                  <button key={s.id} className="w-full text-left px-4 py-2 hover:bg-gray-50 dark:hover:bg-gray-800" onClick={() => { setQuery(''); navigate(`/product/${s.slug}`) }}>
                     {s.title}
                   </button>
-                ))
+                ))}
               )}
             </div>
           )}

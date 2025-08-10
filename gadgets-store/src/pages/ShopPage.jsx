@@ -1,15 +1,18 @@
 import { useEffect, useMemo, useState } from 'react'
 import { useLocation } from 'react-router-dom'
-import products, { allCategories } from '../data/products'
 import ProductCard from '../components/products/ProductCard'
 import PriceRange from '../components/filters/PriceRange'
 import SortDropdown from '../components/filters/SortDropdown'
 import { setPageSEO } from '../utils/seo'
+import { fetchProducts } from '../api/products'
+import Loading from '../components/common/Loading'
 
 function useQuery() {
   const { search } = useLocation()
   return useMemo(() => new URLSearchParams(search), [search])
 }
+
+const categories = ['All', 'Smartphones', 'Headphones', 'Smartwatches', 'Accessories']
 
 export default function ShopPage() {
   useEffect(() => setPageSEO({ title: 'Shop – Gadgets Store', description: 'Browse all gadgets with filters and sorting.' }), [])
@@ -19,16 +22,21 @@ export default function ShopPage() {
   const [category, setCategory] = useState(initialCategory)
   const [price, setPrice] = useState([0, 2000])
   const [sort, setSort] = useState('popular')
+  const [items, setItems] = useState(null)
 
-  const filtered = useMemo(() => {
-    let list = products.filter(p => (category === 'All' ? true : p.category === category))
-    list = list.filter(p => p.price >= price[0] && p.price <= price[1])
+  useEffect(() => {
+    const params = { category: category === 'All' ? undefined : category, minPrice: price[0], maxPrice: price[1] }
+    fetchProducts(params).then(setItems).catch(() => setItems([]))
+  }, [category, price])
+
+  const listed = useMemo(() => {
+    let list = items || []
     switch (sort) {
       case 'price-asc':
-        list = [...list].sort((a, b) => a.price - b.price)
+        list = [...list].sort((a, b) => Number(a.price) - Number(b.price))
         break
       case 'price-desc':
-        list = [...list].sort((a, b) => b.price - a.price)
+        list = [...list].sort((a, b) => Number(b.price) - Number(a.price))
         break
       case 'newest':
         list = [...list].reverse()
@@ -37,7 +45,7 @@ export default function ShopPage() {
         break
     }
     return list
-  }, [category, price, sort])
+  }, [items, sort])
 
   return (
     <div className="container-responsive py-8">
@@ -47,7 +55,7 @@ export default function ShopPage() {
           <div className="card p-4">
             <h3 className="font-semibold mb-3">Categories</h3>
             <ul className="space-y-2">
-              {['All', ...allCategories].map(cat => (
+              {categories.map(cat => (
                 <li key={cat}>
                   <label className="inline-flex items-center gap-2">
                     <input type="radio" name="category" checked={category === cat} onChange={() => setCategory(cat)} />
@@ -67,9 +75,11 @@ export default function ShopPage() {
           <div className="mb-4 flex items-center justify-end gap-3">
             <SortDropdown value={sort} onChange={setSort} />
           </div>
-          <div className="grid gap-6 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
-            {filtered.map(p => <ProductCard key={p.id} product={p} />)}
-          </div>
+          {items === null ? <Loading /> : (
+            <div className="grid gap-6 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
+              {listed.map(p => <ProductCard key={p.id} product={p} />)}
+            </div>
+          )}
         </section>
       </div>
     </div>
